@@ -56,6 +56,7 @@ app.post(
   validateRate,
   async (req, res, _next) => {
   const { name, age, talk } = req.body;
+
   const talkers = await fs.readFile('./talker.json', 'utf-8');
   const talkersParsed = JSON.parse(talkers);
   const newTalker = {
@@ -67,6 +68,28 @@ app.post(
   const newTalkersList = [...talkersParsed, newTalker];
   await fs.writeFile('talker.json', JSON.stringify(newTalkersList));
   return res.status(HTTP_CREATED).json(newTalker);
+  },
+);
+
+app.put(
+  '/talker/:id',
+  validateToken,
+  validateName,
+  validateAge,
+  validateTalk,
+  validateWatchedAt,
+  validateRate,
+  async (req, res, _next) => {
+  const { name, age, talk } = req.body;
+  const { id } = req.params;
+
+  const talkers = await fs.readFile('./talker.json', 'utf-8');
+  const talkersParsed = JSON.parse(talkers);
+  const talkersFiltered = talkersParsed.filter((talker) => talker.id !== id);
+  const newTalker = { id: Number(id), name, age, talk };
+  talkersFiltered.push(newTalker);
+  await fs.writeFile('talker.json', JSON.stringify(talkersFiltered));
+  return res.status(HTTP_OK_STATUS).json(newTalker);
   },
 );
 
