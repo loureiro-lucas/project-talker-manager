@@ -16,9 +16,12 @@ const app = express();
 
 const HTTP_OK_STATUS = 200;
 const HTTP_CREATED = 201;
+const HTTP_NO_CONTENT = 204;
 const HTTP_NOT_FOUND = 404;
 
 const PORT = '3000';
+
+const db = './talker.json';
 
 app.use(bodyParser.json());
 
@@ -28,14 +31,14 @@ app.get('/', (_request, response) => {
 });
 
 app.get('/talker', async (_req, res, _next) => {
-  const talkers = await fs.readFile('./talker.json', 'utf-8');
+  const talkers = await fs.readFile(db, 'utf-8');
   const talkersParsed = JSON.parse(talkers);
   return res.status(HTTP_OK_STATUS).json(talkersParsed);
 });
 
 app.get('/talker/:id', async (req, res, _next) => {
   const { id } = req.params;
-  const talkers = await fs.readFile('./talker.json', 'utf-8');
+  const talkers = await fs.readFile(db, 'utf-8');
   const talkersParsed = JSON.parse(talkers);
   const talker = talkersParsed.find((person) => person.id === Number(id));
   if (!talker) {
@@ -57,7 +60,7 @@ app.post(
   async (req, res, _next) => {
   const { name, age, talk } = req.body;
 
-  const talkers = await fs.readFile('./talker.json', 'utf-8');
+  const talkers = await fs.readFile(db, 'utf-8');
   const talkersParsed = JSON.parse(talkers);
   const newTalker = {
     id: talkersParsed.length + 1,
@@ -66,7 +69,7 @@ app.post(
     talk,
   };
   const newTalkersList = [...talkersParsed, newTalker];
-  await fs.writeFile('talker.json', JSON.stringify(newTalkersList));
+  await fs.writeFile(db, JSON.stringify(newTalkersList));
   return res.status(HTTP_CREATED).json(newTalker);
   },
 );
@@ -83,13 +86,27 @@ app.put(
   const { name, age, talk } = req.body;
   const { id } = req.params;
 
-  const talkers = await fs.readFile('./talker.json', 'utf-8');
+  const talkers = await fs.readFile(db, 'utf-8');
   const talkersParsed = JSON.parse(talkers);
   const talkersFiltered = talkersParsed.filter((talker) => talker.id !== id);
   const newTalker = { id: Number(id), name, age, talk };
   talkersFiltered.push(newTalker);
-  await fs.writeFile('talker.json', JSON.stringify(talkersFiltered));
+  await fs.writeFile(db, JSON.stringify(talkersFiltered));
   return res.status(HTTP_OK_STATUS).json(newTalker);
+  },
+);
+
+app.delete(
+  '/talker/:id',
+  validateToken,
+  async (req, res, _next) => {
+  const { id } = req.params;
+
+  const talkers = await fs.readFile(db, 'utf-8');
+  const talkersParsed = JSON.parse(talkers);
+  const talkersFiltered = talkersParsed.filter((talker) => talker.id !== Number(id));
+  await fs.writeFile(db, JSON.stringify(talkersFiltered));
+  return res.status(HTTP_NO_CONTENT).end();
   },
 );
 
